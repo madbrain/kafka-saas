@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/definitions/ApiObject"
+    }
+  ],
+  "definitions": {
+    "ApiObject": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [ "Role" ]
+        },
+        "apiVersion": {
+          "enum": [ "v1" ]
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "namespace": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "apiVersion"
+      ]
+    }
+  }
+}

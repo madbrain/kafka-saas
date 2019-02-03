@@ -1,0 +1,74 @@
+{
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/definitions/ApiObject"
+    }
+  ],
+  "properties": {
+    "roleRef": {
+      "$ref": "#/definitions/RoleRef"
+    },
+    "subjects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Subject"
+      }
+    }
+  },
+  "required": [
+    "roleRef",
+    "subjects"
+  ],
+  "definitions": {
+    "StringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "RoleRef": {
+      "type": "object",
+      "properties": {
+        "apiGroup": { "type": "string" },
+        "name": { "type": "string" },
+        "kind": { "type": "string" }
+      }
+    },
+    "Subject": {
+      "type": "object",
+      "properties": {
+        "apiGroup": { "type": "string" },
+        "kind": { "type": "string" },
+        "name": { "type": "string" },
+        "namespace": { "type": "string" }
+      }
+    },
+    "ApiObject": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [ "ClusterRoleBinding" ]
+        },
+        "apiVersion": {
+          "enum": [ "v1" ]
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "namespace": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "apiVersion"
+      ]
+    }
+  }
+}

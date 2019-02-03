@@ -1,0 +1,39 @@
+{
+  "resourceType": "topics",
+  "listKind": "TopicList:v1",
+  "useNamespace": true,
+  "schema": {
+    "type": "object",
+    "allOf": [ { "$ref": "#/definitions/ApiObject" } ],
+    "properties": {
+      "spec": {
+        "type": "object",
+        "properties": {
+          "topic": { "type": "string" },
+          "partitions": { "type": "number" },
+          "replicationFactor": { "type": "number" },
+          "size": { "type": "string" },
+          "retention": { "type": "string" }
+        },
+        "required": [ "topic", "partitions", "replicationFactor" ]
+      }
+    },
+    "definitions": {
+      "ApiObject": {
+        "type": "object",
+        "properties": {
+          "kind": { "enum": [ "Topic" ] },
+          "apiVersion": { "enum": [ "v1" ] },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "namespace": { "type": "string" },
+              "name": { "type": "string" }
+            }
+          }
+        },
+        "required": [ "kind", "apiVersion" ]
+      }
+    }
+  }
+}

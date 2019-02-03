@@ -1,0 +1,20 @@
+{
+  "kind": "RoleBinding",
+  "apiVersion": "v1",
+  "metadata": {
+    "namespace": "myproject",
+    "name": "user-reader"
+  },
+  "subjects": [
+    {
+      "kind": "User",
+      "name": "user",
+      "apiGroup": "rbac.authorization.k8s.io"
+    }
+  ],
+  "roleRef": {
+    "kind": "Role",
+    "name": "reader",
+    "apiGroup": "rbac.authorization.k8s.io"
+  }
+}

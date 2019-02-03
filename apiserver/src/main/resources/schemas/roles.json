@@ -1,0 +1,70 @@
+{
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/definitions/ApiObject"
+    }
+  ],
+  "properties": {
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/PolicyRule"
+      }
+    }
+  },
+  "required": [
+    "rules"
+  ],
+  "definitions": {
+    "StringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "PolicyRule": {
+      "type": "object",
+      "properties": {
+        "apiGroups": {
+          "$ref": "#/definitions/StringArray"
+        },
+        "resourceNames": {
+          "$ref": "#/definitions/StringArray"
+        },
+        "resources": {
+          "$ref": "#/definitions/StringArray"
+        },
+        "verbs": {
+          "$ref": "#/definitions/StringArray"
+        }
+      }
+    },
+    "ApiObject": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [ "Role" ]
+        },
+        "apiVersion": {
+          "enum": [ "v1" ]
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "namespace": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "apiVersion"
+      ]
+    }
+  }
+}

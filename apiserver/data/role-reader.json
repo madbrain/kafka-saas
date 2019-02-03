@@ -1,0 +1,15 @@
+{
+  "kind": "Role",
+  "apiVersion": "v1",
+  "metadata": {
+    "namespace": "myproject",
+    "name": "reader"
+  },
+  "rules": [
+    {
+      "apiGroups": [""],
+      "resources": ["ResourceAll"],
+      "verbs": ["get", "watch", "list"]
+    }
+  ]
+}
