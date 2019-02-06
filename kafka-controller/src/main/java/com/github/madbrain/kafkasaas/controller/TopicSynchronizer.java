@@ -9,22 +9,18 @@ import org.apache.kafka.clients.admin.TopicListing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
-@EnableConfigurationProperties(ApiProperties.class)
 public class TopicSynchronizer {
 
     private static final Logger LOG = LoggerFactory.getLogger(ControllerApplication.class);
@@ -42,11 +38,11 @@ public class TopicSynchronizer {
 
     @Scheduled(cron = "*/30 * * * * *")
     public void synchronize() {
-        LOG.info("Polling API");
+        LOG.info("Synchronize topics");
         ResponseEntity<TopicList> response = restTemplate.exchange(
                 apiProperties.getUrl() + "/api/v1/topics",
                 HttpMethod.GET,
-                new HttpEntity<>(createHeaders()),
+                new HttpEntity<>(RestUtils.createHeaders(apiProperties)),
                 TopicList.class);
         List<Topic> expectedTopics = response.getBody().getItems();
         Set<String> existingNames = expectedTopics.stream()
@@ -70,16 +66,6 @@ public class TopicSynchronizer {
 
         deleteTopics(toDelete);
         createTopics(toCreate);
-    }
-
-    private HttpHeaders createHeaders() {
-        return new HttpHeaders() {{
-            String auth = apiProperties.getUsername() + ":" + apiProperties.getPassword();
-            byte[] encodedAuth = Base64.getEncoder().encode(
-                    auth.getBytes(Charset.forName("US-ASCII")));
-            String authHeader = "Basic " + new String(encodedAuth);
-            set("Authorization", authHeader);
-        }};
     }
 
     private Collection<TopicListing> getExistingTopics() {

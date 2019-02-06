@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.github.madbrain.apiserver.services.ResourceDescriptor;
 import com.github.madbrain.apiserver.api.*;
+import com.github.madbrain.apiserver.services.ResourceDescriptor;
 import com.github.madbrain.apiserver.services.ResourceDescriptorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +71,8 @@ public class ResourceDescriptorRegistryImpl implements ResourceDescriptorRegistr
         add(new ResourceDescriptor("rolebindings", RoleBinding.class, RoleBindingList.class, true, readSchema(factory, objectMapper, "/schemas/rolebindings.json")));
         add(new ResourceDescriptor("clusterroles", ClusterRole.class, ClusterRoleList.class, false, readSchema(factory, objectMapper, "/schemas/clusterroles.json")));
         add(new ResourceDescriptor("clusterrolebindings", ClusterRoleBinding.class, ClusterRoleBindingList.class, false, readSchema(factory, objectMapper, "/schemas/clusterrolebindings.json")));
+        add(new ResourceDescriptor("serviceaccounts", ServiceAccount.class, ServiceAccountList.class, true, readSchema(factory, objectMapper, "/schemas/serviceaccounts.json")));
+        add(new ResourceDescriptor("secrets", Secret.class, SecretList.class, true, readSchema(factory, objectMapper, "/schemas/secrets.json")));
     }
 
     private static JsonSchema readSchema(JsonSchemaFactory factory, ObjectMapper mapper, String path) throws IOException, ProcessingException {

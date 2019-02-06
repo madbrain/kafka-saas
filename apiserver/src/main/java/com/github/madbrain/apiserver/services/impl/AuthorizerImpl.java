@@ -1,10 +1,7 @@
 package com.github.madbrain.apiserver.services.impl;
 
-import com.github.madbrain.apiserver.services.ObjectStore;
-import com.github.madbrain.apiserver.services.ResourceDescriptorRegistry;
 import com.github.madbrain.apiserver.api.*;
-import com.github.madbrain.apiserver.services.ApiRequest;
-import com.github.madbrain.apiserver.services.Authorizer;
+import com.github.madbrain.apiserver.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -61,7 +58,7 @@ public class AuthorizerImpl implements Authorizer {
     public boolean authorize(ApiRequest request) {
         if (!StringUtils.isEmpty(request.getPath().getNamespace())) {
             if (objectStore.getAll(request.getPath().getNamespace(), registry.get("rolebindings"), RoleBindingList.class).getItems().stream()
-                    .flatMap(rb -> appliesTo(rb.getSubjects(), request)
+                    .flatMap(rb -> appliesTo(rb.getSubjects(), request, request.getPath().getNamespace())
                             .map(subject -> Stream.of(Context.create(rb, subject)))
                             .orElse(Stream.empty()))
                     .flatMap(context -> getRulesFrom(request.getPath().getNamespace(), context.rb.getRoleRef()).map(context::rule))
@@ -70,7 +67,7 @@ public class AuthorizerImpl implements Authorizer {
             }
         }
         return objectStore.getAll(null, registry.get("clusterrolebindings"), ClusterRoleBindingList.class).getItems().stream()
-                .flatMap(crb -> appliesTo(crb.getSubjects(), request)
+                .flatMap(crb -> appliesTo(crb.getSubjects(), request, "")
                         .map(subject -> Stream.of(Context.create(crb, subject)))
                         .orElse(Stream.empty()))
                 .flatMap(context -> getRulesFrom(null, context.crb.getRoleRef()).map(context::rule))
@@ -121,19 +118,27 @@ public class AuthorizerImpl implements Authorizer {
         return Stream.empty();
     }
 
-    private static Optional<Subject> appliesTo(List<Subject> subjects, ApiRequest request) {
+    private static Optional<Subject> appliesTo(List<Subject> subjects, ApiRequest request, String namespace) {
         return subjects.stream()
-                .filter(subject -> appliesTo(subject, request))
+                .filter(subject -> appliesTo(subject, request, namespace))
                 .findFirst();
     }
 
-    private static boolean appliesTo(Subject subject, ApiRequest request) {
+    private static boolean appliesTo(Subject subject, ApiRequest request, String namespace) {
         if (subject.getKind().equals("User")) {
             return subject.getName().equals(request.getUsername());
         } else if (subject.getKind().equals("Group")) {
             return request.getGroups().contains(subject.getName());
+        } else if (subject.getKind().equals("ServiceAccount")) {
+            String saNamespace = subject.getNamespace().length() > 0 ? subject.getNamespace() : namespace;
+            if (saNamespace.isEmpty()) {
+                return false;
+            }
+            return ServiceAccount.makeUsername(saNamespace, subject.getName()).equals(request.getUsername());
         } else {
             return false;
         }
     }
+
+
 }

@@ -1,5 +1,7 @@
 package com.github.madbrain.kafkasaas.controller.api;
 
+import com.github.madbrain.apiserver.api.ApiObject;
+
 public class Topic extends ApiObject {
 
     private Spec spec;

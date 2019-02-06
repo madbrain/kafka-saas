@@ -1,6 +1,5 @@
 package com.github.madbrain.apiserver.services;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.madbrain.apiserver.api.ApiBase;
 import com.github.madbrain.apiserver.api.ApiList;

@@ -19,6 +19,7 @@
     <modules>
         <module>apiserver</module>
         <module>kafka-controller</module>
+        <module>object-api</module>
     </modules>
 
     <dependencies>

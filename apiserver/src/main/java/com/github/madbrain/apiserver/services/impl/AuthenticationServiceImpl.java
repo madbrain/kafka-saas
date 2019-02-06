@@ -30,6 +30,7 @@ public class AuthenticationServiceImpl implements AuthenticationService  {
 
     @Override
     public Authentication getAuthentication(Jws<Claims> token) {
+        // TODO differentiate service account from normal account with issuer
         return new UsernamePasswordAuthenticationToken(token.getBody().getSubject(), "PROTECTED",
                 AuthorityUtils.commaSeparatedStringToAuthorityList(token.getBody().get("roles", String.class)));
     }

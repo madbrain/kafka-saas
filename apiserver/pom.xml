@@ -26,6 +26,12 @@
     </dependencyManagement>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.github.madbrain.kafkasaas</groupId>
+            <artifactId>object-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
