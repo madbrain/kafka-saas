@@ -2,12 +2,16 @@ package com.github.madbrain.apiserver.controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.fge.jsonpatch.JsonPatch;
+import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.report.ProcessingMessage;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.madbrain.apiserver.api.ApiObject;
 import com.github.madbrain.apiserver.api.Status;
 import com.github.madbrain.apiserver.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +24,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -48,7 +54,7 @@ public class ApiResources {
             return ResponseEntity.badRequest()
                     .body(Status.of("unknown resource type '" + resourcePath.getResourceType() + "'"));
         }
-        if (! descriptor.useNamespace() && ! StringUtils.isEmpty(resourcePath.getNamespace())) {
+        if (!descriptor.useNamespace() && !StringUtils.isEmpty(resourcePath.getNamespace())) {
             return ResponseEntity.notFound().location(new URI(request.getRequestURI())).build();
         }
         if (StringUtils.isEmpty(resourcePath.getResourceName())) {
@@ -100,10 +106,11 @@ public class ApiResources {
             }
             object.getMetadata().setNamespace(null);
         }
-        if (! validate(node, descriptor)) {
+        ValidationResult validationResult = validate(node, descriptor);
+        if (!validationResult.isValid) {
             // TODO send better validation errors
             return ResponseEntity.badRequest()
-                    .body(Status.of("object doesn't conform to schema"));
+                    .body(Status.of("object doesn't conform to schema: " + validationResult.message));
         }
         ApiObject existingObject = store.get(namespace, name, descriptor, descriptor.getResourceClass());
         if (existingObject != null) {
@@ -114,20 +121,40 @@ public class ApiResources {
         return ResponseEntity.created(new URI("/api/v1/" + resourcePath.toString())).build();
     }
 
-    private boolean validate(JsonNode node, ResourceDescriptor descriptor) throws IOException {
+    private ValidationResult validate(JsonNode node, ResourceDescriptor descriptor) throws IOException {
         try {
             ProcessingReport report = descriptor.getSchema().validate(node);
-            if (! report.isSuccess()) {
-                return false;
+            if (!report.isSuccess()) {
+                String message = StreamSupport.stream(report.spliterator(), false)
+                        .map(ProcessingMessage::toString)
+                        .collect(Collectors.joining("\n"));
+                return ValidationResult.error(message);
             }
         } catch (ProcessingException e) {
-            return false;
+            return ValidationResult.error(e.getMessage());
         }
-        return true;
+        return ValidationResult.ok();
+    }
+
+    private static class ValidationResult {
+
+        private boolean isValid = true;
+        private String message;
+
+        public static ValidationResult error(String message) {
+            ValidationResult validationResult = new ValidationResult();
+            validationResult.isValid = false;
+            validationResult.message = message;
+            return validationResult;
+        }
+
+        public static ValidationResult ok() {
+            return new ValidationResult();
+        }
     }
 
     @PutMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity replaceRole(HttpServletRequest request, HttpEntity<String> httpEntity) throws IOException, URISyntaxException {
+    public ResponseEntity replaceResource(HttpServletRequest request, HttpEntity<String> httpEntity) throws IOException, URISyntaxException {
         ResourcePath resourcePath = ResourcePathBuilder.build(extractPathFromPattern(request));
         if (resourcePath.notValid()) {
             return ResponseEntity.badRequest()
@@ -170,16 +197,17 @@ public class ApiResources {
                         .body(Status.of("namespace not allowed"));
             }
         }
-        if (! validate(node, descriptor)) {
+        ValidationResult validationResult = validate(node, descriptor);
+        if (!validationResult.isValid) {
             return ResponseEntity.badRequest()
-                    .body(Status.of("object doesn't conform to schema"));
+                    .body(Status.of("object doesn't conform to schema: " + validationResult.message));
         }
         store.put(object, node, descriptor);
         return ResponseEntity.created(new URI("/api/v1/" + resourcePath.toString())).build();
     }
 
     @DeleteMapping(produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity deleteRole(HttpServletRequest request) {
+    public ResponseEntity deleteResource(HttpServletRequest request) {
         ResourcePath resourcePath = ResourcePathBuilder.build(extractPathFromPattern(request));
         if (resourcePath.notValid()) {
             return ResponseEntity.badRequest()
@@ -189,10 +217,6 @@ public class ApiResources {
         if (descriptor == null) {
             return ResponseEntity.badRequest()
                     .body(Status.of("unknown resource type '" + resourcePath.getResourceType() + "'"));
-        }
-        if (StringUtils.isEmpty(resourcePath.getNamespace())) {
-            return ResponseEntity.badRequest()
-                    .body(Status.of("namespace required"));
         }
         if (StringUtils.isEmpty(resourcePath.getResourceName())) {
             return ResponseEntity.badRequest()
@@ -206,6 +230,39 @@ public class ApiResources {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         String bestMatchPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         return new AntPathMatcher().extractPathWithinPattern(bestMatchPattern, path);
+    }
+
+    @PatchMapping(produces = APPLICATION_JSON_VALUE)
+    public ResponseEntity patchResource(HttpServletRequest request, HttpEntity<String> httpEntity) throws IOException, JsonPatchException {
+        ResourcePath resourcePath = ResourcePathBuilder.build(extractPathFromPattern(request));
+        if (resourcePath.notValid()) {
+            return ResponseEntity.badRequest()
+                    .body(Status.of("resource type required"));
+        }
+        ResourceDescriptor descriptor = registry.get(resourcePath.getResourceType());
+        if (descriptor == null) {
+            return ResponseEntity.badRequest()
+                    .body(Status.of("unknown resource type '" + resourcePath.getResourceType() + "'"));
+        }
+        if (StringUtils.isEmpty(resourcePath.getResourceName())) {
+            return ResponseEntity.badRequest()
+                    .body(Status.of("resource name required"));
+        }
+        JsonNode source = store.getRaw(resourcePath.getNamespace(), resourcePath.getResourceName(), descriptor);
+        if (source == null) {
+            return ResponseEntity.badRequest()
+                    .body(Status.of("unknown object " + resourcePath.toString()));
+        }
+        JsonPatch patch = objectMapper.readValue(httpEntity.getBody(), JsonPatch.class);
+        JsonNode result = patch.apply(source);
+        ValidationResult validationResult = validate(result, descriptor);
+        if (!validationResult.isValid) {
+            return ResponseEntity.badRequest()
+                    .body(Status.of("object doesn't conform to schema: " + validationResult.message));
+        }
+        ApiObject object = objectMapper.treeToValue(result, ApiObject.class);
+        store.put(object, result, descriptor);
+        return ResponseEntity.ok().build();
     }
 
 }

@@ -4,13 +4,5 @@
   "metadata": {
     "namespace": "system",
     "name": "controller-sa"
-  },
-  "secrets": [
-    {
-      "apiVersion": "v1",
-      "kind": "Secret",
-      "name": "controller-sa-token",
-      "namespace": "system"
-    }
-  ]
+  }
 }

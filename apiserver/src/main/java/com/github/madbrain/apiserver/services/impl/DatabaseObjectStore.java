@@ -93,15 +93,26 @@ public class DatabaseObjectStore implements ObjectStore {
         List<String> uids = jdbcTemplate.queryForList("SELECT uid from objects WHERE namespace = ? AND type = ? AND name = ?",
                 new Object[]{namespace, descriptor.getResourceType(), object.getMetadata().getName()}, String.class);
         String uid;
+        boolean exists = false;
         if (uids.isEmpty()) {
             uid = UUID.randomUUID().toString();
         } else {
+            exists = true;
             uid = uids.get(0);
         }
         object.getMetadata().setUid(uid);
         try {
-            jdbcTemplate.update("INSERT INTO objects(uid, namespace, type, name, content) VALUES(?,?,?,?,?)",
-                    object.getMetadata().getUid(), namespace, descriptor.getResourceType(), object.getMetadata().getName(), objectMapper.writeValueAsString(node));
+            if (exists) {
+                jdbcTemplate.update("UPDATE objects SET namespace = ?, type = ?, name = ?, content = ? WHERE uid = ?",
+                        namespace, descriptor.getResourceType(),
+                        object.getMetadata().getName(),
+                        objectMapper.writeValueAsString(node),
+                        object.getMetadata().getUid());
+            } else {
+                jdbcTemplate.update("INSERT INTO objects(uid, namespace, type, name, content) VALUES(?,?,?,?,?)",
+                        object.getMetadata().getUid(), namespace, descriptor.getResourceType(),
+                        object.getMetadata().getName(), objectMapper.writeValueAsString(node));
+            }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -146,7 +157,12 @@ public class DatabaseObjectStore implements ObjectStore {
 
     @Override
     public void delete(String namespace, String name, ResourceDescriptor descriptor) {
-        jdbcTemplate.update("DELETE FROM objects WHERE namespace = ? AND type = ? AND name = ?",
-                namespace, descriptor.getResourceType(), name);
+        if (StringUtils.isEmpty(namespace)) {
+            jdbcTemplate.update("DELETE FROM objects WHERE type = ? AND name = ?",
+                    descriptor.getResourceType(), name);
+        } else {
+            jdbcTemplate.update("DELETE FROM objects WHERE namespace = ? AND type = ? AND name = ?",
+                    namespace, descriptor.getResourceType(), name);
+        }
     }
 }

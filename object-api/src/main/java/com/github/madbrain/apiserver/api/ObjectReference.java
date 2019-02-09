@@ -7,6 +7,15 @@ public class ObjectReference {
     private String name;
     private String namespace;
 
+    public static ObjectReference from(ApiObject object) {
+        ObjectReference ref = new ObjectReference();
+        ref.apiVersion = object.getApiVersion();
+        ref.kind = object.getKind();
+        ref.name = object.getMetadata().getName();
+        ref.namespace = object.getMetadata().getNamespace();
+        return ref;
+    }
+
     public String getApiVersion() {
         return apiVersion;
     }

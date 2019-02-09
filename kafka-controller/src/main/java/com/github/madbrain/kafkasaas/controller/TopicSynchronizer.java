@@ -38,7 +38,7 @@ public class TopicSynchronizer {
 
     @Scheduled(cron = "*/30 * * * * *")
     public void synchronize() {
-        LOG.info("Synchronize topics");
+        LOG.debug("Synchronize topics");
         ResponseEntity<TopicList> response = restTemplate.exchange(
                 apiProperties.getUrl() + "/api/v1/topics",
                 HttpMethod.GET,

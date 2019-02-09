@@ -21,4 +21,8 @@ public class ServiceAccount extends ApiObject {
     public static String makeUsername(String namespace, String name) {
         return "serviceaccount:" + namespace + ":" + name;
     }
+
+    public String getUsername() {
+        return makeUsername(getMetadata().getNamespace(), getMetadata().getName());
+    }
 }
