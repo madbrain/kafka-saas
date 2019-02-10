@@ -3,10 +3,10 @@
 
 Experiment on implementing an API server on the model of Kubernetes.
 
-Features:
-- authorization based on ClusterRole/ClusterRoleBinding/Role/RoleBinding objects
-- object validation base on Json schema placed in an external folder
-- produces JWT tokens
+![Big Picture](docs/apiserver.png)
 
-TODO:
-- add service account and secret
+Features:
+- object validation base on Json schema placed in an external folder
+- authorization based on ClusterRole/ClusterRoleBinding/Role/RoleBinding objects
+- authentication using ServiceAccount and Secret
+- produces JWT tokens

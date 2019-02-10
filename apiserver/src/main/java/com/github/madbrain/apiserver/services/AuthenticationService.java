@@ -8,5 +8,5 @@ public interface AuthenticationService {
 
     Authentication authenticate(AuthenticationRequest authenticationRequest);
 
-    Authentication getAuthentication(Jws<Claims> token);
+    Authentication getAuthentication(String tokenData, Jws<Claims> token);
 }

@@ -40,7 +40,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
             try {
                 Jws<Claims> claims = jwtTokenService.validateJwtToken(bearerToken);
-                Authentication authentication = authenticationService.getAuthentication(claims);
+                Authentication authentication = authenticationService.getAuthentication(bearerToken, claims);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (ExpiredJwtException exception) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "error.jwt.expired");

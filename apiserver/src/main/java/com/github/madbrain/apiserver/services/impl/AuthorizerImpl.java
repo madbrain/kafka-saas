@@ -130,7 +130,7 @@ public class AuthorizerImpl implements Authorizer {
         } else if (subject.getKind().equals("Group")) {
             return request.getGroups().contains(subject.getName());
         } else if (subject.getKind().equals("ServiceAccount")) {
-            String saNamespace = subject.getNamespace().length() > 0 ? subject.getNamespace() : namespace;
+            String saNamespace = StringUtils.isEmpty(subject.getNamespace()) ? namespace : subject.getNamespace();
             if (saNamespace.isEmpty()) {
                 return false;
             }
